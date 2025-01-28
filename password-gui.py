@@ -55,6 +55,14 @@ def create_username():
     user_data[hashed_username] = hashed_password.decode()
     save_user_data(user_data)
     messagebox.showinfo("Success", "Username created successfully")
+    create_button.pack_forget()  # Hide create button after successful creation
+
+def hide_login():
+    input_frame.place_forget()  # Hide login frame
+
+def show_login():
+    input_frame.place(relx=0.5, rely=0.5, anchor="center")  # Show login frame
+    logout_frame.place_forget()  # Hide logout button
 
 def verify_password():
     """Verify the entered password against the stored hashed password."""
@@ -66,6 +74,7 @@ def verify_password():
     
     user_data = load_user_data()
     hashed_username = hash_username(username)
+    
     if hashed_username not in user_data:
         messagebox.showerror("Error", "Username does not exist")
         return
@@ -73,14 +82,20 @@ def verify_password():
     stored_hashed_password = user_data[hashed_username].encode()
     if bcrypt.checkpw(password.encode(), stored_hashed_password):
         messagebox.showinfo("Success", "Password verified successfully")
+        hide_login()
+        show_logout_button()
     else:
         messagebox.showerror("Error", "Incorrect password")
+
+def show_logout_button():
+    logout_frame.place(relx=0.5, rely=0.9, anchor="center")
 
 def clear_user_data():
     """Clear the user data file."""
     if os.path.exists(USER_DATA_FILE):
         os.remove(USER_DATA_FILE)
         messagebox.showinfo("Success", "User data file cleared")
+        create_button.pack(pady=5)  # Show create button
     else:
         messagebox.showerror("Error", "User data file does not exist")
 
@@ -109,8 +124,16 @@ def enforce_aspect_ratio(event=None):
             y = window.winfo_y()
             window.geometry(f"{new_size}x{new_size}+{x}+{y}")
 
+def check_existing_user():
+    """Check if any user exists and update UI accordingly"""
+    user_data = load_user_data()
+    if user_data:
+        create_button.pack_forget()
+    else:
+        create_button.pack(pady=5)
+
 def create_gui():
-    global username_entry, password_entry, original_image, label, window, photo
+    global username_entry, password_entry, original_image, label, window, photo, input_frame, logout_frame, create_button
     
     window = tk.Tk()
     window.title("Password Manager")
@@ -126,10 +149,15 @@ def create_gui():
     window.bind("<Configure>", enforce_aspect_ratio)
     window.bind("<Configure>", resize_image)
     
-    # Create and place the input fields and buttons
+    # Create login frame
     input_frame = tk.Frame(window, bg="white")
     input_frame.place(relx=0.5, rely=0.5, anchor="center")
-
+    
+    # Create logout frame
+    logout_frame = tk.Frame(window, bg="white")
+    tk.Button(logout_frame, text="Logout", command=show_login).pack(pady=5)
+    
+    # Create and place the input fields and buttons
     tk.Label(input_frame, text="Enter your username:", bg="white").pack(pady=5)
     username_entry = tk.Entry(input_frame)
     username_entry.pack(pady=5)
@@ -138,9 +166,14 @@ def create_gui():
     password_entry = tk.Entry(input_frame, show='*')
     password_entry.pack(pady=5)
 
-    tk.Button(input_frame, text="Create Username", command=create_username).pack(pady=5)
-    tk.Button(input_frame, text="Verify Password", command=verify_password).pack(pady=5)
-    tk.Button(input_frame, text="Clear User Data", command=clear_user_data).pack(pady=5)
+    create_button = tk.Button(input_frame, text="Create Username", command=create_username)
+    verify_button = tk.Button(input_frame, text="Verify Password", command=verify_password)
+    clear_button = tk.Button(input_frame, text="Clear User Data", command=clear_user_data)
+    
+    # Check for existing user before showing create button
+    check_existing_user()
+    verify_button.pack(pady=5)
+    clear_button.pack(pady=5)
     
     # Start the GUI event loop
     window.mainloop()
