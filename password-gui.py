@@ -84,6 +84,12 @@ def verify_password():
     username_entry.delete(0, tk.END)
     password_entry.delete(0, tk.END)
 
+def clear_password_file():
+    """Clear the password.txt file of previous hashes."""
+    open('password.txt', 'w').close()
+    print("Password file cleared successfully!")
+    messagebox.showinfo("Success", "Password file cleared successfully!")
+
 def create_gui():
     """Create the GUI application."""
     global username_entry, password_entry
@@ -104,6 +110,7 @@ def create_gui():
     # Create and place the buttons
     tk.Button(window, text="Create Username", command=create_username).pack(pady=5)
     tk.Button(window, text="Verify Password", command=verify_password).pack(pady=5)
+    tk.Button(window, text="Clear Password File", command=clear_password_file).pack(pady=5)
     
     # Start the GUI event loop
     window.mainloop()
