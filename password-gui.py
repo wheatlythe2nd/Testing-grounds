@@ -70,14 +70,16 @@ def verify_password():
     hashed_username = hash_username(username)
     
     if hashed_username not in user_data:
-        messagebox.showerror("Error", "Username not found.")
+        messagebox.showerror("Error", "Username or password incorrect.")
+        username_entry.delete(0, tk.END)
+        password_entry.delete(0, tk.END)
         return
     
     stored_hashed_password = user_data[hashed_username].encode()
     if bcrypt.checkpw(password.encode(), stored_hashed_password):
         messagebox.showinfo("Success", "Password is correct!")
     else:
-        messagebox.showerror("Error", "Password is incorrect!")
+        messagebox.showerror("Error", "Username or password incorrect.")
     
     username_entry.delete(0, tk.END)
     password_entry.delete(0, tk.END)
