@@ -7,6 +7,8 @@ import json
 import os
 from tkinter import Tk, Label, messagebox
 from PIL import Image, ImageTk
+from PIL.Image import Resampling  # Add this import
+import subprocess
 
 # Path to the file where user data will be stored
 USER_DATA_FILE = 'user_data.json'
@@ -102,19 +104,15 @@ def clear_user_data():
         messagebox.showerror("Error", "User data file does not exist")
 
 def resize_image(event=None):
-    if hasattr(resize_image, '_after_id'):
-        window.after_cancel(resize_image._after_id)
+    width = window.winfo_width()
+    height = window.winfo_height()
     
-    def delayed_resize():
-        width = window.winfo_width()
-        height = window.winfo_height()
-        image = original_image.resize((width, height), Image.ANTIALIAS)
-        global photo
-        photo = ImageTk.PhotoImage(image)
-        label.config(image=photo)
-        label.image = photo
-    
-    resize_image._after_id = window.after(50, delayed_resize)
+    # Replace ANTIALIAS with Resampling.LANCZOS
+    image = original_image.resize((width, height), Resampling.LANCZOS)
+    global photo
+    photo = ImageTk.PhotoImage(image)
+    label.config(image=photo)
+    label.image = photo
 
 def enforce_aspect_ratio(event=None):
     if event and event.widget == window:
@@ -142,6 +140,14 @@ def hide_gif():
     """Hide GIF when logging out"""
     gif_label.place_forget()
 
+def launch_online():
+    """Launch the online.py program"""
+    subprocess.Popen(['python', 'online.py'])
+
+def show_success():
+    """Show success message for debugging"""
+    messagebox.showinfo("Debug", "Success!")
+
 def create_gui():
     global username_entry, password_entry, original_image, label, window, photo, input_frame, logout_frame, create_button, gif_label
     
@@ -166,6 +172,7 @@ def create_gui():
     # Create logout frame
     logout_frame = tk.Frame(window, bg="white")
     tk.Button(logout_frame, text="Logout", command=show_login).pack(pady=5)
+    tk.Button(logout_frame, text="Go Online", command=show_success).pack(pady=5)
     
     # Create and place the input fields and buttons
     tk.Label(input_frame, text="Enter your username:", bg="white").pack(pady=5)
