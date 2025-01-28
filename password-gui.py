@@ -63,6 +63,7 @@ def hide_login():
 def show_login():
     input_frame.place(relx=0.5, rely=0.5, anchor="center")  # Show login frame
     logout_frame.place_forget()  # Hide logout button
+    hide_gif()
 
 def verify_password():
     """Verify the entered password against the stored hashed password."""
@@ -84,6 +85,7 @@ def verify_password():
         messagebox.showinfo("Success", "Password verified successfully")
         hide_login()
         show_logout_button()
+        show_gif()
     else:
         messagebox.showerror("Error", "Incorrect password")
 
@@ -132,8 +134,16 @@ def check_existing_user():
     else:
         create_button.pack(pady=5)
 
+def show_gif():
+    """Display animated GIF after login"""
+    gif_label.place(relx=0.5, rely=0.5, anchor="center")
+
+def hide_gif():
+    """Hide GIF when logging out"""
+    gif_label.place_forget()
+
 def create_gui():
-    global username_entry, password_entry, original_image, label, window, photo, input_frame, logout_frame, create_button
+    global username_entry, password_entry, original_image, label, window, photo, input_frame, logout_frame, create_button, gif_label
     
     window = tk.Tk()
     window.title("Password Manager")
@@ -174,6 +184,31 @@ def create_gui():
     check_existing_user()
     verify_button.pack(pady=5)
     clear_button.pack(pady=5)
+    
+    # Create GIF label with animation
+    gif = Image.open("hatsune-miku-dance.gif")
+    frames = []
+    try:
+        while True:
+            # Convert to RGBA for transparency
+            frame = gif.convert('RGBA')
+            photoframe = ImageTk.PhotoImage(frame)
+            frames.append(photoframe)
+            gif.seek(gif.tell() + 1)
+    except EOFError:
+        pass
+
+    gif_label = tk.Label(window)
+    gif_label.frames = frames  # Keep reference
+    
+    def update_gif(frame_index=0):
+        frame = frames[frame_index]
+        gif_label.configure(image=frame)
+        next_frame = (frame_index + 1) % len(frames)
+        # Adjust timing (40ms = ~25fps)
+        window.after(40, update_gif, next_frame)
+    
+    update_gif()  # Start animation
     
     # Start the GUI event loop
     window.mainloop()
