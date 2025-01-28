@@ -2,8 +2,11 @@ import bcrypt
 import hashlib
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import PhotoImage
 import json
 import os
+from tkinter import Tk, Label, messagebox
+from PIL import Image, ImageTk
 
 # Path to the file where user data will be stored
 USER_DATA_FILE = 'user_data.json'
@@ -11,8 +14,12 @@ USER_DATA_FILE = 'user_data.json'
 def load_user_data():
     """Load user data from the JSON file."""
     if os.path.exists(USER_DATA_FILE):
-        with open(USER_DATA_FILE, 'r') as file:
-            return json.load(file)
+        try:
+            with open(USER_DATA_FILE, 'r') as file:
+                return json.load(file)
+        except json.JSONDecodeError:
+            # Return an empty dictionary if the file is empty or contains invalid JSON
+            return {}
     return {}
 
 def save_user_data(user_data):
@@ -31,93 +38,106 @@ def hash_username(username):
     return hashlib.sha256(username.encode()).hexdigest()
 
 def create_username():
-    """Create a new username and store the hashed password."""
+    """Create a new username and store the hashed username and password."""
     username = username_entry.get()
     password = password_entry.get()
     if not username or not password:
-        messagebox.showwarning("Input Error", "Please enter both username and password.")
+        messagebox.showerror("Error", "Username and password cannot be empty")
         return
     
     user_data = load_user_data()
-    
-    # Hash the username using SHA-256
     hashed_username = hash_username(username)
-    
-    # Check if hashed username already exists
-    if hashed_username in user_data:
-        messagebox.showerror("Error", "Username already exists.")
+    if (hashed_username in user_data):
+        messagebox.showerror("Error", "Username already exists")
         return
     
-    hashed_password = hash_password(password).decode()
-    user_data[hashed_username] = hashed_password
+    hashed_password = hash_password(password)
+    user_data[hashed_username] = hashed_password.decode()
     save_user_data(user_data)
-    
-    messagebox.showinfo("Success", "Username and password created successfully!")
-    username_entry.delete(0, tk.END)
-    password_entry.delete(0, tk.END)
+    messagebox.showinfo("Success", "Username created successfully")
 
 def verify_password():
-    """Verify the entered password for the given username."""
+    """Verify the entered password against the stored hashed password."""
     username = username_entry.get()
     password = password_entry.get()
     if not username or not password:
-        messagebox.showwarning("Input Error", "Please enter both username and password.")
+        messagebox.showerror("Error", "Username and password cannot be empty")
         return
     
     user_data = load_user_data()
-    
-    # Hash the username using SHA-256 for lookup
     hashed_username = hash_username(username)
-    
     if hashed_username not in user_data:
-        messagebox.showerror("Error", "Username or password incorrect.")
-        username_entry.delete(0, tk.END)
-        password_entry.delete(0, tk.END)
+        messagebox.showerror("Error", "Username does not exist")
         return
     
     stored_hashed_password = user_data[hashed_username].encode()
     if bcrypt.checkpw(password.encode(), stored_hashed_password):
-        messagebox.showinfo("Success", "Password is correct!")
+        messagebox.showinfo("Success", "Password verified successfully")
     else:
-        messagebox.showerror("Error", "Username or password incorrect.")
+        messagebox.showerror("Error", "Incorrect password")
+
+def clear_user_data():
+    """Clear the user data file."""
+    if os.path.exists(USER_DATA_FILE):
+        os.remove(USER_DATA_FILE)
+        messagebox.showinfo("Success", "User data file cleared")
+    else:
+        messagebox.showerror("Error", "User data file does not exist")
+
+def resize_image(event=None):
+    # Get current window dimensions after enforcing aspect ratio
+    width = window.winfo_width()
+    height = window.winfo_height()
     
-    username_entry.delete(0, tk.END)
-    password_entry.delete(0, tk.END)
+    # Ensure the image fills the window completely
+    image = original_image.resize((width, height), Image.ANTIALIAS)
+    global photo
+    photo = ImageTk.PhotoImage(image)
+    label.config(image=photo)
+    label.image = photo
 
-def clear_user_data_file():
-    """Clear the user_data.json file of previous data."""
-    open(USER_DATA_FILE, 'w').close()
-    print("User data file cleared successfully!")
-    messagebox.showinfo("Success", "User data file cleared successfully!")
-
-def clear_password_file():
-    """Clear the password.txt file of previous hashes."""
-    open('password.txt', 'w').close()
-    print("Password file cleared successfully!")
-    messagebox.showinfo("Success", "Password file cleared successfully!")
+def enforce_aspect_ratio(event=None):
+    if event and event.widget == window:
+        width = window.winfo_width()
+        height = window.winfo_height()
+        if abs(width - height) > 2:
+            new_size = min(width, height)
+            x = window.winfo_x()
+            y = window.winfo_y()
+            window.geometry(f"{new_size}x{new_size}+{x}+{y}")
 
 def create_gui():
-    """Create the GUI application."""
-    global username_entry, password_entry
+    global username_entry, password_entry, original_image, label, window, photo
     
-    # Create the main window
     window = tk.Tk()
     window.title("Password Manager")
+    window.geometry("800x800")
     
-    # Create and place the input fields
-    tk.Label(window, text="Enter your username:").pack(pady=5)
-    username_entry = tk.Entry(window)
+    # Load original image at full resolution without initial resize
+    original_image = Image.open("girl with gun.png")
+    photo = ImageTk.PhotoImage(original_image)
+    label = tk.Label(window, image=photo)
+    label.pack(fill="both", expand=True)
+    
+    # Call resize_image initially and bind to Configure event
+    resize_image()
+    window.bind("<Configure>", lambda e: (resize_image(e), enforce_aspect_ratio(e)))
+    
+    # Create and place the input fields and buttons
+    input_frame = tk.Frame(window, bg="white")
+    input_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+    tk.Label(input_frame, text="Enter your username:", bg="white").pack(pady=5)
+    username_entry = tk.Entry(input_frame)
     username_entry.pack(pady=5)
-    
-    tk.Label(window, text="Enter your password:").pack(pady=5)
-    password_entry = tk.Entry(window, show='*')
+
+    tk.Label(input_frame, text="Enter your password:", bg="white").pack(pady=5)
+    password_entry = tk.Entry(input_frame, show='*')
     password_entry.pack(pady=5)
-    
-    # Create and place the buttons
-    tk.Button(window, text="Create Username", command=create_username).pack(pady=5)
-    tk.Button(window, text="Verify Password", command=verify_password).pack(pady=5)
-    tk.Button(window, text="Clear Password File", command=clear_password_file).pack(pady=5)
-    tk.Button(window, text="Clear User Data File", command=clear_user_data_file).pack(pady=5)
+
+    tk.Button(input_frame, text="Create Username", command=create_username).pack(pady=5)
+    tk.Button(input_frame, text="Verify Password", command=verify_password).pack(pady=5)
+    tk.Button(input_frame, text="Clear User Data", command=clear_user_data).pack(pady=5)
     
     # Start the GUI event loop
     window.mainloop()
