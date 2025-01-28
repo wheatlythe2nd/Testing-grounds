@@ -85,16 +85,19 @@ def clear_user_data():
         messagebox.showerror("Error", "User data file does not exist")
 
 def resize_image(event=None):
-    # Get current window dimensions after enforcing aspect ratio
-    width = window.winfo_width()
-    height = window.winfo_height()
+    if hasattr(resize_image, '_after_id'):
+        window.after_cancel(resize_image._after_id)
     
-    # Ensure the image fills the window completely
-    image = original_image.resize((width, height), Image.ANTIALIAS)
-    global photo
-    photo = ImageTk.PhotoImage(image)
-    label.config(image=photo)
-    label.image = photo
+    def delayed_resize():
+        width = window.winfo_width()
+        height = window.winfo_height()
+        image = original_image.resize((width, height), Image.ANTIALIAS)
+        global photo
+        photo = ImageTk.PhotoImage(image)
+        label.config(image=photo)
+        label.image = photo
+    
+    resize_image._after_id = window.after(50, delayed_resize)
 
 def enforce_aspect_ratio(event=None):
     if event and event.widget == window:
@@ -119,9 +122,9 @@ def create_gui():
     label = tk.Label(window, image=photo)
     label.pack(fill="both", expand=True)
     
-    # Call resize_image initially and bind to Configure event
-    resize_image()
-    window.bind("<Configure>", lambda e: (resize_image(e), enforce_aspect_ratio(e)))
+    # Separate bindings for smoother updates
+    window.bind("<Configure>", enforce_aspect_ratio)
+    window.bind("<Configure>", resize_image)
     
     # Create and place the input fields and buttons
     input_frame = tk.Frame(window, bg="white")
