@@ -1,4 +1,5 @@
 import bcrypt
+import hashlib
 import tkinter as tk
 from tkinter import messagebox
 import json
@@ -19,11 +20,15 @@ def save_user_data(user_data):
     with open(USER_DATA_FILE, 'w') as file:
         json.dump(user_data, file)
 
-def hash_string(string):
-    """Hash a string (username or password) using bcrypt."""
+def hash_password(password):
+    """Hash a password using bcrypt."""
     salt = bcrypt.gensalt()
-    hashed_string = bcrypt.hashpw(string.encode(), salt)
-    return hashed_string
+    hashed_password = bcrypt.hashpw(password.encode(), salt)
+    return hashed_password
+
+def hash_username(username):
+    """Hash a username using SHA-256."""
+    return hashlib.sha256(username.encode()).hexdigest()
 
 def create_username():
     """Create a new username and store the hashed password."""
@@ -35,15 +40,15 @@ def create_username():
     
     user_data = load_user_data()
     
-    # Hash the username
-    hashed_username = hash_string(username).decode()
+    # Hash the username using SHA-256
+    hashed_username = hash_username(username)
     
     # Check if hashed username already exists
     if hashed_username in user_data:
         messagebox.showerror("Error", "Username already exists.")
         return
     
-    hashed_password = hash_string(password).decode()
+    hashed_password = hash_password(password).decode()
     user_data[hashed_username] = hashed_password
     save_user_data(user_data)
     
@@ -61,8 +66,8 @@ def verify_password():
     
     user_data = load_user_data()
     
-    # Hash the username for lookup
-    hashed_username = hash_string(username).decode()
+    # Hash the username using SHA-256 for lookup
+    hashed_username = hash_username(username)
     
     if hashed_username not in user_data:
         messagebox.showerror("Error", "Username not found.")
