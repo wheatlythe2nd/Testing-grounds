@@ -84,6 +84,12 @@ def verify_password():
     username_entry.delete(0, tk.END)
     password_entry.delete(0, tk.END)
 
+def clear_user_data_file():
+    """Clear the user_data.json file of previous data."""
+    open(USER_DATA_FILE, 'w').close()
+    print("User data file cleared successfully!")
+    messagebox.showinfo("Success", "User data file cleared successfully!")
+
 def clear_password_file():
     """Clear the password.txt file of previous hashes."""
     open('password.txt', 'w').close()
@@ -111,6 +117,7 @@ def create_gui():
     tk.Button(window, text="Create Username", command=create_username).pack(pady=5)
     tk.Button(window, text="Verify Password", command=verify_password).pack(pady=5)
     tk.Button(window, text="Clear Password File", command=clear_password_file).pack(pady=5)
+    tk.Button(window, text="Clear User Data File", command=clear_user_data_file).pack(pady=5)
     
     # Start the GUI event loop
     window.mainloop()
